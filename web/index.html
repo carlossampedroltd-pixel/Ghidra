@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>NotraFree</title>
+  <meta name="description" content="Notas de voz de tu Boya Notra NEO, transcritas en el iPhone y guardadas en tu Google Drive.">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="NotraFree">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+<div class="app">
+  <nav class="tabs" aria-label="Secciones">
+    <div class="brand">NotraFree</div>
+    <button data-tab="notes" class="active"><span class="ico">≋</span><span>Notas</span></button>
+    <button data-tab="device"><span class="ico">⦿</span><span>Grabadora</span></button>
+    <button data-tab="drive"><span class="ico">☁︎</span><span>Drive</span></button>
+    <button data-tab="settings"><span class="ico">⚙︎</span><span>Ajustes</span></button>
+  </nav>
+
+  <main>
+    <!-- Notes: list + detail (side by side when wide: Duo unfolded / landscape) -->
+    <section class="view notes active" id="view-notes">
+      <div class="list-pane">
+        <header class="bar">
+          <h1>Notas de voz</h1>
+          <div class="actions">
+            <button id="btn-import" class="btn">Importar</button>
+            <button id="btn-record" class="btn primary">● Grabar</button>
+          </div>
+        </header>
+        <input id="search" class="search" type="search" placeholder="Buscar en títulos y transcripciones">
+        <input id="file-input" type="file" accept="audio/*,.wav,.mp3,.m4a,.opus,.ogg,.amr" multiple hidden>
+        <ul id="rec-list" class="rec-list"></ul>
+        <div id="empty" class="empty" hidden>
+          <p><strong>Sin notas todavía</strong></p>
+          <p>Importa audios (desde Archivos, USB-C o la app de Boya), graba con el iPhone o descarga desde la grabadora.</p>
+        </div>
+      </div>
+      <div class="detail-pane" id="detail">
+        <div class="placeholder">Elige una nota</div>
+      </div>
+    </section>
+
+    <!-- Recorder (Web Bluetooth) -->
+    <section class="view" id="view-device">
+      <div class="page">
+        <header class="bar"><h1>Grabadora</h1></header>
+        <div id="ble-unsupported" class="card warn" hidden>
+          <p><strong>Safari no permite Bluetooth desde webs.</strong></p>
+          <p>Para conectar la Notra NEO abre esta misma dirección en <strong>Bluefy</strong> (navegador gratuito de la App Store con Web Bluetooth). Todo lo demás funciona en Safari.</p>
+        </div>
+        <div id="ble-panel">
+          <div class="card">
+            <div class="row">
+              <span id="ble-state">Desconectado</span>
+              <button id="ble-connect" class="btn primary">Buscar y conectar</button>
+            </div>
+            <p class="hint">Cierra la app oficial de Boya antes: la grabadora solo acepta una conexión.</p>
+          </div>
+          <div class="card">
+            <h2>Descargar grabación</h2>
+            <div class="row">
+              <label>Nº <input id="ble-index" type="number" min="0" value="0" class="num"></label>
+              <button id="ble-download" class="btn">Descargar</button>
+            </div>
+            <p class="hint" id="ble-progress">Necesita el Perfil BLE completo (Ajustes).</p>
+          </div>
+          <div class="card">
+            <h2>Consola (ingeniería inversa)</h2>
+            <div id="ble-chars" class="chars"></div>
+            <div class="row">
+              <select id="ble-target"></select>
+            </div>
+            <div class="row">
+              <input id="ble-hex" class="mono grow" placeholder="hex, p.ej. aa 55 01 00" autocapitalize="off" autocomplete="off" spellcheck="false">
+              <button id="ble-send" class="btn">Enviar</button>
+            </div>
+            <div class="row">
+              <button id="ble-export" class="btn">Exportar registro</button>
+              <button id="ble-clear" class="btn">Borrar</button>
+            </div>
+            <pre id="ble-log" class="log"></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Google Drive -->
+    <section class="view" id="view-drive">
+      <div class="page">
+        <header class="bar"><h1>Google Drive</h1></header>
+        <div class="card">
+          <div class="row">
+            <span id="drive-user">Sin sesión</span>
+            <button id="drive-signin" class="btn primary">Iniciar sesión con Google</button>
+            <button id="drive-signout" class="btn" hidden>Cerrar sesión</button>
+          </div>
+          <div class="row" id="drive-actions" hidden>
+            <button id="drive-sync" class="btn">Subir todo lo pendiente</button>
+            <button id="drive-refresh" class="btn">Actualizar lista</button>
+          </div>
+          <p class="hint">La sesión dura 1 hora; después vuelve a tocar "Iniciar sesión".</p>
+        </div>
+        <ul id="drive-list" class="rec-list"></ul>
+      </div>
+    </section>
+
+    <!-- Settings -->
+    <section class="view" id="view-settings">
+      <div class="page">
+        <header class="bar"><h1>Ajustes</h1></header>
+        <div class="card form">
+          <h2>Transcripción (gratis, en el iPhone)</h2>
+          <label>Idioma
+            <select id="set-language">
+              <option value="es">Español</option><option value="en">English</option>
+              <option value="pt">Português</option><option value="fr">Français</option>
+              <option value="de">Deutsch</option><option value="it">Italiano</option>
+              <option value="ca">Català</option>
+            </select>
+          </label>
+          <label>Modelo Whisper
+            <select id="set-model">
+              <option value="onnx-community/whisper-tiny">Tiny: rápido, ~40 MB</option>
+              <option value="onnx-community/whisper-base">Base: equilibrado, ~80 MB</option>
+              <option value="onnx-community/whisper-small">Small: más preciso, ~250 MB</option>
+            </select>
+          </label>
+          <label class="check"><input type="checkbox" id="set-auto"> Transcribir, resumir y subir automáticamente</label>
+        </div>
+        <div class="card form">
+          <h2>Google Drive</h2>
+          <label>Client ID de Google (tipo "Aplicación web")
+            <input id="set-client" class="mono" placeholder="1234-abcd.apps.googleusercontent.com" autocapitalize="off" spellcheck="false">
+          </label>
+          <label>Carpeta en Drive <input id="set-folder"></label>
+        </div>
+        <div class="card form">
+          <h2>Perfil BLE de la grabadora</h2>
+          <textarea id="set-profile" class="mono" rows="16" spellcheck="false" autocapitalize="off"></textarea>
+          <div class="row">
+            <button id="set-profile-save" class="btn">Guardar perfil</button>
+            <button id="set-profile-reset" class="btn">Restaurar borrador</button>
+          </div>
+        </div>
+        <div class="card">
+          <button id="set-save" class="btn primary">Guardar ajustes</button>
+          <p class="hint">NotraFree no tiene servidor: tus audios se quedan en este iPhone y en tu Google Drive.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="status" class="status" hidden></div>
+  <div id="toast" class="toast" hidden></div>
+</div>
+</body>
+</html>

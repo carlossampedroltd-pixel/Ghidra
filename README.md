@@ -1,5 +1,10 @@
 # NotraFree: an app for the Boya Notra NEO without a subscription
 
+> **No Mac? Use the web version:** https://carlossampedroltd-pixel.github.io/Ghidra/
+> It installs on the iPhone from Safari, adapts to the iPhone 17 Pro Max and the
+> iPhone Duo (folded and open), and transcribes with Whisper on the device.
+> Setup guide: [`docs/WEB_APP.md`](docs/WEB_APP.md).
+
 An open-source iPhone app that replaces the official Boya app for the **Boya Notra
 NEO** AI recorder:
 
@@ -25,7 +30,8 @@ NEO** AI recorder:
 ## Structure
 
 ```
-NotraFree/                 iOS app (SwiftUI, iOS 17+)
+web/                       web app (PWA): no build step, deployed to GitHub Pages
+NotraFree/                 native iOS app (SwiftUI, iOS 17+, needs a Mac with Xcode)
   project.yml              XcodeGen spec (two targets: ProMax and Duo)
   Config/                  per-target xcconfigs: Team ID, bundle IDs, Google client IDs
   NotraFree/
@@ -41,6 +47,7 @@ tools/
   ghidra/FindBleProtocol.java  Ghidra script: finds UUIDs and protocol strings in .so files
 docs/REVERSE_ENGINEERING.md   step-by-step reverse-engineering guide
 docs/INSTALACION_PERSONAL.md  install only on your iPhone, without the App Store
+docs/WEB_APP.md               web version: setup, Google Drive, Bluefy for Bluetooth
 ```
 
 ## Two versions

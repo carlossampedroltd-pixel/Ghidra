@@ -52,7 +52,10 @@ Si nada de eso basta, sigue.
 2. Reproduce el uso en la app oficial, genera un sysdiagnose y ábrelo con
    **PacketLogger** (Additional Tools for Xcode) en un Mac.
 
-### Opción C — Directo con NotraFree o con un ordenador
+### Opción C: directo con NotraFree, nRF Connect o un ordenador
+- **nRF Connect** (gratis en la App Store) muestra en el iPhone todos los
+  servicios y características de la grabadora, y permite escribir y suscribirse.
+  Es la forma más rápida de obtener los UUID sin ordenador.
 - NotraFree › Grabadora › *Explorador GATT* lista servicios/características, se
   suscribe a todas las notificaciones y guarda un log exportable.
 - `python3 tools/ble_probe.py scan | dump <MAC> | talk ...` hace lo mismo desde
