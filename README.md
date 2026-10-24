@@ -26,7 +26,8 @@ NEO** AI recorder:
 
 ```
 NotraFree/                 iOS app (SwiftUI, iOS 17+)
-  project.yml              XcodeGen spec
+  project.yml              XcodeGen spec (two targets: ProMax and Duo)
+  Config/                  per-target xcconfigs: Team ID, bundle IDs, Google client IDs
   NotraFree/
     App/                   entry point and tabs
     BLE/                   CoreBluetooth + DeviceProfile (configurable protocol)
@@ -38,23 +39,34 @@ tools/
   btsnoop_att.py           extracts ATT commands and notifications from an Android capture
   ble_probe.py             scans, dumps GATT and replays commands from a PC (bleak)
   ghidra/FindBleProtocol.java  Ghidra script: finds UUIDs and protocol strings in .so files
-docs/REVERSE_ENGINEERING.md   step-by-step guide
+docs/REVERSE_ENGINEERING.md   step-by-step reverse-engineering guide
+docs/INSTALACION_PERSONAL.md  install only on your iPhone, without the App Store
 ```
 
-## Build (requires a Mac with Xcode 16+)
+## Two versions
 
-1. `brew install xcodegen && cd NotraFree && xcodegen generate && open NotraFree.xcodeproj`
-2. **Google OAuth** (once):
-   - In [Google Cloud Console](https://console.cloud.google.com/), create a project
-     and enable the **Google Drive API**.
-   - Set up the OAuth consent screen ("External", add your email as a test user).
-   - Credentials › Create OAuth client ID › **iOS**, with the bundle id
-     `com.example.notrafree` (or whatever you use in `project.yml`).
-   - In `NotraFree/Info.plist`, replace `YOUR_CLIENT_ID` in `GIDClientID` and in
-     the URL scheme (`com.googleusercontent.apps.<...>`) with your values.
-3. Choose your Apple ID under Signing & Capabilities and run it on your iPhone.
-   With a free Apple account the app expires after 7 days. Reinstall it, or use a
-   paid developer account ($99/year) or AltStore/SideStore.
+The project builds two apps from the same code (different bundle IDs, so both can
+be installed at once):
+
+| Scheme | Device | Layout |
+|---|---|---|
+| **NotraFreeProMax** | iPhone 17 Pro Max | standard single-column tabs |
+| **NotraFreeDuo** | iPhone Duo | folded (5.4"): same tabs. Unfolded (7.6"): three-column split view (sections, notes, detail) with summary and transcript side by side |
+
+The Duo layout switches on available width, not device model, so it also adapts
+when the app shares the screen with another app in Split View.
+
+## Build and install on your iPhone only (no App Store)
+
+Step-by-step guide: [`docs/INSTALACION_PERSONAL.md`](docs/INSTALACION_PERSONAL.md).
+In short:
+
+1. Put your Team ID and bundle prefix in `NotraFree/Config/Personal.xcconfig`, and
+   one Google OAuth iOS client ID per app in `Config/ProMax.xcconfig` / `Config/Duo.xcconfig`.
+2. `brew install xcodegen && cd NotraFree && xcodegen generate && open NotraFree.xcodeproj`
+3. Turn on Developer Mode on the iPhone, connect it by cable, choose the scheme and
+   press ▶︎. The signing profile only allows your registered devices. With a free
+   Apple ID it expires after 7 days; with the paid program ($99/year), after 1 year.
 4. On the iPhone, download the on-device dictation language: Settings › General ›
    Keyboard › Dictation languages.
 

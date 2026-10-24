@@ -10,6 +10,7 @@ struct RecordingDetailView: View {
     @State private var busy: String?
     @State private var error: String?
     @State private var tab = 0
+    @Environment(\.isUnfolded) private var isUnfolded
 
     private var rec: Recording? { store.recordings.first { $0.id == recordingId } }
 
@@ -44,13 +45,24 @@ struct RecordingDetailView: View {
                     if let busy { HStack { ProgressView(); Text(busy) } }
                 }
 
-                Section {
-                    Picker("", selection: $tab) {
-                        Text("Resumen").tag(0)
-                        Text("Transcripción").tag(1)
-                    }.pickerStyle(.segmented)
-                    Text((tab == 0 ? rec.summary : rec.transcript) ?? "—")
-                        .textSelection(.enabled)
+                if isUnfolded {
+                    // Large inner screen: summary and transcript side by side.
+                    Section {
+                        HStack(alignment: .top, spacing: 16) {
+                            column("Resumen", rec.summary)
+                            Divider()
+                            column("Transcripción", rec.transcript)
+                        }
+                    }
+                } else {
+                    Section {
+                        Picker("", selection: $tab) {
+                            Text("Resumen").tag(0)
+                            Text("Transcripción").tag(1)
+                        }.pickerStyle(.segmented)
+                        Text((tab == 0 ? rec.summary : rec.transcript) ?? "—")
+                            .textSelection(.enabled)
+                    }
                 }
             }
             .navigationTitle(rec.title)
@@ -59,6 +71,14 @@ struct RecordingDetailView: View {
                    message: { Text(error ?? "") })
             .onDisappear { player?.stop() }
         }
+    }
+
+    private func column(_ title: String, _ text: String?) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title).font(.headline)
+            Text(text ?? "—").textSelection(.enabled)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func togglePlay(_ rec: Recording) {

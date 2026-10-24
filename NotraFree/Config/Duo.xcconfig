@@ -1,0 +1,11 @@
+// iPhone Duo build: split view on the unfolded 7.6" inner screen.
+#include "Personal.xcconfig"
+
+PRODUCT_NAME = NotraFreeDuo
+PRODUCT_BUNDLE_IDENTIFIER = $(BUNDLE_PREFIX).notrafree.duo
+APP_DISPLAY_NAME = Notra Duo
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = $(inherited) DUO
+
+// Prefix of the iOS OAuth client created for THIS bundle ID
+// (everything before ".apps.googleusercontent.com").
+GOOGLE_CLIENT_ID = YOUR_DUO_CLIENT_ID

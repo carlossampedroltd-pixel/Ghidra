@@ -1,0 +1,8 @@
+// Your personal signing settings, shared by both apps.
+// See docs/INSTALACION_PERSONAL.md.
+
+// Xcode › Settings › Accounts › your Apple ID › Team ID (10 characters).
+DEVELOPMENT_TEAM =
+
+// Must be unique to you (Apple rejects bundle IDs that someone else already uses).
+BUNDLE_PREFIX = com.carlossampedro

@@ -2,9 +2,13 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct LibraryView: View {
+    /// When set (iPhone Duo unfolded), the list drives the detail column of a
+    /// split view instead of pushing onto its own navigation stack.
+    var selection: Binding<UUID?>? = nil
+
     @EnvironmentObject var store: RecordingStore
     @EnvironmentObject var drive: GoogleDriveService
-    @StateObject private var phone = PhoneRecorder()
+    @EnvironmentObject var phone: PhoneRecorder
     @State private var importing = false
     @State private var search = ""
     @State private var message: String?
@@ -18,19 +22,44 @@ struct LibraryView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            List {
-                if phone.isRecording {
-                    HStack {
-                        Image(systemName: "record.circle.fill").foregroundStyle(.red)
-                        Text("Grabando con iPhone… \(Duration.seconds(phone.elapsed).formatted(.time(pattern: .minuteSecond)))")
-                    }
-                }
-                ForEach(filtered) { rec in
-                    NavigationLink(value: rec) { RecordingRow(rec: rec) }
-                }
-                .onDelete { idx in idx.map { filtered[$0] }.forEach(store.delete) }
+        if selection == nil {
+            NavigationStack {
+                content.navigationDestination(for: Recording.self) { RecordingDetailView(recordingId: $0.id) }
             }
+        } else {
+            content
+        }
+    }
+
+    @ViewBuilder
+    private var list: some View {
+        if let selection {
+            List(selection: selection) { rows(linked: false) }
+        } else {
+            List { rows(linked: true) }
+        }
+    }
+
+    @ViewBuilder
+    private func rows(linked: Bool) -> some View {
+        if phone.isRecording {
+            HStack {
+                Image(systemName: "record.circle.fill").foregroundStyle(.red)
+                Text("Grabando con iPhone… \(Duration.seconds(phone.elapsed).formatted(.time(pattern: .minuteSecond)))")
+            }
+        }
+        ForEach(filtered) { rec in
+            if linked {
+                NavigationLink(value: rec) { RecordingRow(rec: rec) }
+            } else {
+                RecordingRow(rec: rec).tag(rec.id)
+            }
+        }
+        .onDelete { idx in idx.map { filtered[$0] }.forEach(store.delete) }
+    }
+
+    private var content: some View {
+        list
             .overlay {
                 if store.recordings.isEmpty && !phone.isRecording {
                     ContentUnavailableView("Sin notas",
@@ -40,7 +69,6 @@ struct LibraryView: View {
             }
             .searchable(text: $search, prompt: "Buscar en títulos y transcripciones")
             .navigationTitle("Notas de voz")
-            .navigationDestination(for: Recording.self) { RecordingDetailView(recordingId: $0.id) }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button { importing = true } label: { Label("Importar", systemImage: "square.and.arrow.down") }
@@ -60,7 +88,6 @@ struct LibraryView: View {
             .alert("Aviso", isPresented: .constant(message != nil), actions: {
                 Button("OK") { message = nil }
             }, message: { Text(message ?? "") })
-        }
     }
 
     private func toggleRecording() {
