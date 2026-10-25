@@ -17,7 +17,8 @@ Dirección (cuando esté activada): **https://carlossampedroltd-pixel.github.io/
 | Importar audios (Archivos, USB-C, exportados de la app de Boya) | ✅ | ✅ |
 | Grabar con el micro del iPhone | ✅ | ✅ |
 | Transcripción con Whisper **en el propio iPhone**, gratis y sin límite | ✅ | ✅ |
-| Resumen automático (puntos clave + tareas) | ✅ | ✅ |
+| **IA local** (Qwen 2.5): resumen, título, tareas | ✅ | ✅ |
+| **Pestaña IA**: pregunta sobre todas tus notas | ✅ | ✅ |
 | Subir / bajar de tu Google Drive | ✅ | ✅ |
 | Conectar con la Notra NEO por Bluetooth | ❌ Apple no lo permite en webs | ✅ |
 
@@ -72,11 +73,29 @@ nada. Usa WebGPU si el iPhone lo tiene; si no, la CPU.
   usa el modelo Tiny o córtala.
 - **La sesión de Google dura 1 hora** (así funciona el login web). Cuando caduque,
   toca "Iniciar sesión" otra vez; si ya diste permiso, es un toque.
-- **El resumen** es extractivo (frases clave + tareas detectadas), no un LLM.
-  Gratis y sin conexión, pero menos elaborado que el de Boya.
+- **IA local:** la primera vez descarga el modelo (Equilibrada ≈1,2 GB, Ligera
+  ≈0,5 GB; mejor con WiFi, pulsa "Descargar ahora" en la pestaña IA). La
+  Equilibrada necesita WebGPU; sin GPU se usa la Ligera en CPU, que es lenta.
+  Si la IA falla o se queda sin memoria, la app usa el resumen básico
+  (frases clave + tareas) y te avisa.
+- **Whisper y la IA no se cargan a la vez** para no agotar la memoria de Safari:
+  al pasar de transcribir a resumir hay unos segundos de carga.
 - **Safari puede borrar los datos de una web** que no abres en semanas. La app
   pide almacenamiento persistente, y tus notas están en Drive si activas la
   subida automática.
+
+## Cómo funciona la IA local
+
+- Modelo **Qwen 2.5 Instruct** (Alibaba, licencia Apache 2.0, buen español)
+  ejecutado con transformers.js en un *worker* dentro de Safari. Es un sandbox
+  doble: el de iOS para Safari y el del navegador para la web.
+- **Resúmenes:** las grabaciones largas se resumen por partes y luego se unen.
+  Si la nota tiene un título automático ("Nota 25/10…"), la IA le pone uno mejor.
+- **Pregunta a tus notas:** busca las 4 notas más relacionadas con tu pregunta
+  y responde usando solo esas notas, diciendo cuáles ha consultado.
+- Un modelo de 1,5B es mucho más pequeño que los de Boya o ChatGPT: va bien
+  para resumir y localizar datos, pero puede equivocarse en detalles.
+  Comprueba lo importante en la transcripción.
 
 ## Bluetooth en Bluefy: qué cambia respecto a la app nativa
 

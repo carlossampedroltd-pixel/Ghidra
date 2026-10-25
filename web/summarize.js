@@ -1,7 +1,7 @@
 // Free, offline summary: frequency-scored key sentences plus detected action items.
 // No model download and no API: good enough to skim a recording.
 
-const STOP = new Set(`a al algo algunas algunos ante antes como con contra cual cuando de del desde donde
+export const STOP = new Set(`a al algo algunas algunos ante antes como con contra cual cuando de del desde donde
 durante e el ella ellas ellos en entre era es esa esas ese eso esos esta estaba estado estamos estan
 estar este esto estos fue fueron ha hay la las le les lo los mas me mi mis mucho muy nada ni no nos
 o os otra otro para pero poco por porque que quien se sea ser si sido sin sobre son su sus tambien
@@ -12,7 +12,7 @@ he she we they so just like yeah okay um uh what your you my me not can do our u
 
 const ACTION = /\b(hay que|tengo que|tenemos que|tienes que|debemos|deber[ií]a|pendiente|recordar|recu[eé]rda|no olvid|enviar|mandar|llamar|revisar|preparar|need to|have to|should|todo|follow up|remember)\b/i;
 
-const norm = (w) => w.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9ñ]/g, '');
+export const norm = (w) => w.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9ñ]/g, '');
 
 export function summarize(text) {
   const sentences = text

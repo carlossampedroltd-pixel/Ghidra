@@ -175,3 +175,14 @@ textarea { width: 100%; resize: vertical; }
 .chars .c:first-child { border-top: 0; }
 .chars .c .btn { min-height: 30px; padding: 3px 10px; font-size: 0.75rem; }
 #ble-target { width: 100%; }
+
+/* ---------- AI chat ---------- */
+.chat-page { display: flex; flex-direction: column; min-height: 100%; }
+#ai-panel { display: flex; flex-direction: column; flex: 1; }
+#ai-panel[hidden] { display: none; }
+.chat { flex: 1; display: flex; flex-direction: column; gap: 8px; padding: 4px 0 12px; }
+.bubble { max-width: 85%; padding: 10px 13px; border-radius: 16px; white-space: pre-wrap; overflow-wrap: anywhere; -webkit-user-select: text; user-select: text; }
+.bubble.user { align-self: flex-end; background: var(--accent); color: var(--accent-text); border-bottom-right-radius: 4px; }
+.bubble.assistant { align-self: flex-start; background: var(--surface); border: 1px solid var(--line); border-bottom-left-radius: 4px; }
+.bubble .sources { margin-top: 8px; font-size: 0.75rem; color: var(--muted); }
+.ask { position: sticky; bottom: 0; display: flex; gap: 8px; padding: 10px 0; background: var(--bg); }

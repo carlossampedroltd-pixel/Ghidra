@@ -3,6 +3,7 @@ import * as drive from './drive.js';
 import * as ble from './ble.js';
 import { PhoneRecorder, durationOf, decodeTo16kMono, extFor, MIME } from './audio.js';
 import { summarize } from './summarize.js';
+import * as llm from './llm.js';
 import { settings, saveSettings, DEFAULT_PROFILE } from './settings.js';
 
 const $ = (sel) => document.querySelector(sel);
@@ -154,8 +155,12 @@ const pickDevice = () => (devicePromise ??= (async () => {
 })());
 
 let worker = null;
+// Whisper and the LLM are never kept in memory together (iPhone tab memory limit).
+function releaseWhisper() { worker?.terminate(); worker = null; }
+
 async function transcribeAudio(pcm) {
   const device = await pickDevice();
+  llm.release();
   worker ??= new Worker(new URL('./transcribe-worker.js', import.meta.url), { type: 'module' });
   return new Promise((resolve, reject) => {
     worker.onmessage = ({ data }) => {
@@ -192,10 +197,24 @@ async function doTranscribe(id) {
   toast(`"${rec.title}" transcrita en ${Math.round((Date.now() - t0) / 1000)} s`);
 }
 
+// Titles we generated ourselves; the AI may replace them with a better one.
+const AUTO_TITLE = /^(Nota |Notra #|iphone-|Grabación|New Recording|REC|\d)/i;
+
 async function doSummarize(id) {
   const rec = getRec(id);
   if (!rec.transcript) return;
-  await updateRec({ ...rec, summary: summarize(rec.transcript) });
+  if (llm.enabled()) {
+    releaseWhisper();
+    try {
+      const { title, summary } = await llm.summarizeTranscript(rec.transcript, status);
+      const fresh = getRec(id);
+      await updateRec({ ...fresh, summary, title: title && AUTO_TITLE.test(fresh.title) ? title : fresh.title });
+      return;
+    } catch (e) {
+      toast(`${e.message}\nUsando el resumen básico.`, 7000);
+    }
+  }
+  await updateRec({ ...getRec(id), summary: summarize(rec.transcript) });
 }
 
 function noteMarkdown(rec) {
@@ -432,11 +451,69 @@ function wireBle() {
   });
 }
 
+// ---------------------------------------------------------------- AI tab (ask your notes)
+
+const aiHistory = [];  // [{role, content}] shown in the chat and fed back as context
+
+async function renderAI() {
+  const on = llm.enabled();
+  $('#ai-off').hidden = on;
+  $('#ai-panel').hidden = !on;
+  if (on) $('#ai-model').textContent = (await llm.config()).label;
+}
+
+function addBubble(role, text) {
+  const div = document.createElement('div');
+  div.className = `bubble ${role}`;
+  div.textContent = text;
+  $('#ai-chat').append(div);
+  div.scrollIntoView({ block: 'end' });
+  return div;
+}
+
+function wireAI() {
+  $('#ai-preload').onclick = () => enqueue(async () => {
+    releaseWhisper();
+    await llm.chat(null, { onStatus: status });
+    toast('IA lista y guardada en el iPhone');
+  });
+  $('#ai-form').onsubmit = (e) => {
+    e.preventDefault();
+    const q = $('#ai-input').value.trim();
+    if (!q) return;
+    $('#ai-input').value = '';
+    addBubble('user', q);
+    const bubble = addBubble('assistant', '…');
+    enqueue(async () => {
+      releaseWhisper();
+      let streamed = '';
+      try {
+        const { text, notes } = await llm.askNotes(q, state.recordings, aiHistory, {
+          onStatus: status,
+          onToken: (t) => { streamed += t; bubble.textContent = streamed; bubble.scrollIntoView({ block: 'end' }); },
+        });
+        bubble.textContent = text;
+        if (notes.length) {
+          const src = document.createElement('div');
+          src.className = 'sources';
+          src.textContent = `Notas consultadas: ${notes.map((n) => n.title).join(' · ')}`;
+          bubble.append(src);
+        }
+        aiHistory.push({ role: 'user', content: q }, { role: 'assistant', content: text });
+      } catch (err) {
+        bubble.textContent = `⚠︎ ${err.message}`;
+      }
+    });
+  };
+  $('#ai-clear').onclick = () => { aiHistory.length = 0; $('#ai-chat').innerHTML = ''; };
+}
+
 // ---------------------------------------------------------------- Settings tab
 
 function renderSettings() {
   $('#set-language').value = settings.language;
   $('#set-model').value = settings.model;
+  $('#set-llm').value = settings.llm;
   $('#set-auto').checked = settings.autoProcess;
   $('#set-client').value = settings.clientId;
   $('#set-folder').value = settings.folder;
@@ -448,10 +525,13 @@ function wireSettings() {
     saveSettings({
       language: $('#set-language').value,
       model: $('#set-model').value,
+      llm: $('#set-llm').value,
       autoProcess: $('#set-auto').checked,
       clientId: $('#set-client').value.trim(),
       folder: $('#set-folder').value.trim() || 'Boya Notra',
     });
+    llm.resetConfig();
+    renderAI();
     toast('Ajustes guardados');
   };
   $('#set-profile-save').onclick = () => {
@@ -467,7 +547,9 @@ wireNotes();
 wireDrive();
 wireBle();
 wireSettings();
+wireAI();
 renderSettings();
+renderAI();
 renderBle();
 db.requestPersistence();
 reload().catch((e) => toast(`Base de datos: ${e.message}`));

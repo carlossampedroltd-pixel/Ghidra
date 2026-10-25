@@ -1,8 +1,8 @@
 // Offline shell: network-first for our own files (so updates arrive right away),
 // cache fallback when offline. Google APIs and model downloads are not touched.
-const CACHE = 'notrafree-v1';
+const CACHE = 'notrafree-v2';
 const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'db.js', 'drive.js', 'ble.js', 'audio.js',
-  'summarize.js', 'settings.js', 'transcribe-worker.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
+  'summarize.js', 'settings.js', 'transcribe-worker.js', 'llm.js', 'llm-worker.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

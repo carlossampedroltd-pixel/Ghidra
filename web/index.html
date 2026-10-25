@@ -22,6 +22,7 @@
   <nav class="tabs" aria-label="Secciones">
     <div class="brand">NotraFree</div>
     <button data-tab="notes" class="active"><span class="ico">≋</span><span>Notas</span></button>
+    <button data-tab="ai"><span class="ico">✦</span><span>IA</span></button>
     <button data-tab="device"><span class="ico">⦿</span><span>Grabadora</span></button>
     <button data-tab="drive"><span class="ico">☁︎</span><span>Drive</span></button>
     <button data-tab="settings"><span class="ico">⚙︎</span><span>Ajustes</span></button>
@@ -48,6 +49,31 @@
       </div>
       <div class="detail-pane" id="detail">
         <div class="placeholder">Elige una nota</div>
+      </div>
+    </section>
+
+    <!-- Local AI: ask questions about your notes -->
+    <section class="view" id="view-ai">
+      <div class="page chat-page">
+        <header class="bar">
+          <h1>Pregunta a tus notas</h1>
+          <button id="ai-clear" class="btn">Nueva conversación</button>
+        </header>
+        <div id="ai-off" class="card" hidden>
+          <p>La IA local está apagada. Actívala en Ajustes › IA local.</p>
+        </div>
+        <div id="ai-panel">
+          <div class="card">
+            <div class="row"><span>Modelo: <strong id="ai-model">…</strong></span>
+              <button id="ai-preload" class="btn">Descargar ahora</button></div>
+            <p class="hint">Funciona dentro del iPhone, sin internet tras la primera descarga (≈0,5–1,2 GB, mejor con WiFi). Tus notas no salen del teléfono.</p>
+          </div>
+          <div id="ai-chat" class="chat"></div>
+          <form id="ai-form" class="ask">
+            <input id="ai-input" class="grow" placeholder="¿Qué quedamos con el cliente el martes?" autocomplete="off">
+            <button class="btn primary">Preguntar</button>
+          </form>
+        </div>
       </div>
     </section>
 
@@ -134,6 +160,13 @@
               <option value="onnx-community/whisper-tiny">Tiny: rápido, ~40 MB</option>
               <option value="onnx-community/whisper-base">Base: equilibrado, ~80 MB</option>
               <option value="onnx-community/whisper-small">Small: más preciso, ~250 MB</option>
+            </select>
+          </label>
+          <label>IA local para resúmenes y preguntas
+            <select id="set-llm">
+              <option value="medium">Equilibrada: Qwen 2.5 1.5B, ~1,2 GB (necesita GPU)</option>
+              <option value="small">Ligera: Qwen 2.5 0.5B, ~0,5 GB</option>
+              <option value="off">Apagada: resumen básico sin IA</option>
             </select>
           </label>
           <label class="check"><input type="checkbox" id="set-auto"> Transcribir, resumir y subir automáticamente</label>

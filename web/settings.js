@@ -26,6 +26,7 @@ const DEFAULTS = {
   folder: 'Boya Notra',
   language: 'es',
   model: 'onnx-community/whisper-base',
+  llm: 'medium',              // local AI: 'off' | 'small' (0.5B) | 'medium' (1.5B, GPU only)
   autoProcess: true,
   profile: DEFAULT_PROFILE,
 };
