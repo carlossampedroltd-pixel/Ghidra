@@ -1,6 +1,6 @@
 // Whisper running inside the browser (transformers.js). The model is downloaded
 // once from Hugging Face and cached by the browser; audio never leaves the device.
-import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2';
+import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.1/+esm';
 
 env.allowLocalModels = false;
 

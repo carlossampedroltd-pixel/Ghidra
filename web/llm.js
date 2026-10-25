@@ -3,31 +3,36 @@
 import { settings } from './settings.js';
 import { STOP, norm } from './summarize.js';
 
-const MODELS = {
-  small: 'onnx-community/Qwen2.5-0.5B-Instruct',
-  medium: 'onnx-community/Qwen2.5-1.5B-Instruct',
-};
+// Qwen3 1.7B: the smallest model that summarized Spanish faithfully in our tests
+// (Qwen 2.5 0.5B/1.5B and Qwen3 0.6B invented figures or ignored the format).
+const MODEL = 'onnx-community/Qwen3-1.7B-ONNX';
 
 let worker = null;
 let nextId = 1;
 let configPromise = null;
 
-export const enabled = () => settings.llm !== 'off';
-
-/** Chooses model/precision/backend for this device. 1.5B only with a GPU. */
+/**
+ * Model/precision/backend for this device, or { unavailable: reason }.
+ * On the iPhone only the WebGPU + f16 build (1.4 GB) is practical; the CPU build
+ * is a single 2.1 GB file, so it is only offered as an explicit desktop option.
+ */
 export function config() {
   configPromise ??= (async () => {
+    if (settings.llm === 'off') return { unavailable: 'IA local apagada en Ajustes.' };
+    if (settings.llm === 'cpu') return { model: MODEL, dtype: 'q4', device: 'wasm', label: 'Qwen3 1.7B · CPU (lento, ~2,1 GB)' };
     let adapter = null;
     try { adapter = await navigator.gpu?.requestAdapter(); } catch { /* no WebGPU */ }
-    if (adapter) {
-      const f16 = adapter.features.has('shader-f16');
-      const size = settings.llm === 'small' ? 'small' : 'medium';
-      return { model: MODELS[size], dtype: f16 ? 'q4f16' : 'q4', device: 'webgpu', label: `Qwen 2.5 ${size === 'small' ? '0.5B' : '1.5B'} · GPU` };
-    }
-    return { model: MODELS.small, dtype: 'q8', device: 'wasm', label: 'Qwen 2.5 0.5B · CPU (lento)' };
+    if (!adapter) return { unavailable: 'Este navegador no tiene WebGPU, que la IA local necesita. Se usará el resumen básico.' };
+    if (!adapter.features.has('shader-f16')) return { unavailable: 'La GPU de este dispositivo no admite el formato del modelo (shader-f16). Se usará el resumen básico.' };
+    return { model: MODEL, dtype: 'q4f16', device: 'webgpu', label: 'Qwen3 1.7B · GPU (~1,4 GB)' };
   })();
   return configPromise;
 }
+
+export const enabled = async () => !(await config()).unavailable;
+
+/** Qwen3 may emit an (empty) reasoning block; never show it. */
+export const clean = (t) => t.replace(/<think>[\s\S]*?(<\/think>|$)/g, '').trimStart();
 
 export function resetConfig() { configPromise = null; release(); }
 
@@ -40,6 +45,12 @@ export function release() {
 /** Runs a chat completion. `messages` = [{role, content}]; omit it to just download/load the model. */
 export async function chat(messages, { maxTokens = 512, onToken, onStatus } = {}) {
   const cfg = await config();
+  if (cfg.unavailable) throw new Error(cfg.unavailable);
+  // Qwen3: skip the slow "thinking" phase; we want direct answers.
+  if (messages?.length) {
+    const last = messages.at(-1);
+    messages = [...messages.slice(0, -1), { ...last, content: `${last.content}\n/no_think` }];
+  }
   worker ??= new Worker(new URL('./llm-worker.js', import.meta.url), { type: 'module' });
   const id = nextId++;
   return new Promise((resolve, reject) => {
@@ -48,7 +59,7 @@ export async function chat(messages, { maxTokens = 512, onToken, onStatus } = {}
       if (data.type === 'download') onStatus?.(`Descargando IA (solo la 1ª vez): ${Math.round(data.progress || 0)}%`);
       else if (data.type === 'status') onStatus?.(data.text);
       else if (data.type === 'token') onToken?.(data.text);
-      else if (data.type === 'done') resolve(data.text);
+      else if (data.type === 'done') resolve(clean(data.text).trim());
       else if (data.type === 'error') { release(); reject(new Error(`IA local: ${data.message}`)); }
     };
     worker.onerror = (e) => { release(); reject(new Error(`IA local: ${e.message || 'error del worker'}`)); };
@@ -60,7 +71,9 @@ const SYSTEM_SUMMARY = 'Eres un asistente que resume notas de voz. Responde siem
   + 'Sé fiel al contenido: no inventes nombres, cifras ni fechas.';
 
 const FORMAT = 'Responde exactamente con este formato:\n'
-  + 'TÍTULO: <máximo 8 palabras>\n\nRESUMEN:\n<3 a 5 frases>\n\nPUNTOS CLAVE:\n- ...\n\nTAREAS:\n- ... (o "Ninguna")';
+  + 'TÍTULO: <máximo 8 palabras>\n\nRESUMEN:\n<3 a 5 frases>\n\nPUNTOS CLAVE:\n- <un punto por línea>\n\n'
+  + 'TAREAS:\n- <cada cosa que alguien tiene que hacer. Busca frases como "tenemos que", "hay que", "tengo que", "no olvidar". '
+  + 'Añade responsable y fecha solo si se dicen en la transcripción; no los inventes. Si no hay ninguna, escribe "- Ninguna">';
 
 function chunks(text, size = 5000) {
   const out = [];

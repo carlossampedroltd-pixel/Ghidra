@@ -1,7 +1,7 @@
-// Local language model (Qwen 2.5 Instruct) running inside the browser with
+// Local language model (Qwen3 1.7B) running inside the browser with
 // transformers.js. Downloaded once from Hugging Face and cached; prompts and
 // notes never leave the device.
-import { pipeline, TextStreamer, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2';
+import { pipeline, TextStreamer, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.1/+esm';
 
 env.allowLocalModels = false;
 

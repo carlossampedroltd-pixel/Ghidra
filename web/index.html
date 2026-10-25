@@ -60,7 +60,8 @@
           <button id="ai-clear" class="btn">Nueva conversación</button>
         </header>
         <div id="ai-off" class="card" hidden>
-          <p>La IA local está apagada. Actívala en Ajustes › IA local.</p>
+          <p id="ai-off-reason"></p>
+          <p class="hint">Puedes cambiarlo en Ajustes › IA local.</p>
         </div>
         <div id="ai-panel">
           <div class="card">
@@ -164,9 +165,9 @@
           </label>
           <label>IA local para resúmenes y preguntas
             <select id="set-llm">
-              <option value="medium">Equilibrada: Qwen 2.5 1.5B, ~1,2 GB (necesita GPU)</option>
-              <option value="small">Ligera: Qwen 2.5 0.5B, ~0,5 GB</option>
+              <option value="on">Activada: Qwen3 1.7B, ~1,4 GB (necesita GPU)</option>
               <option value="off">Apagada: resumen básico sin IA</option>
+              <option value="cpu">Forzar CPU: lento, ~2,1 GB (solo ordenador)</option>
             </select>
           </label>
           <label class="check"><input type="checkbox" id="set-auto"> Transcribir, resumir y subir automáticamente</label>

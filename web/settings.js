@@ -26,7 +26,7 @@ const DEFAULTS = {
   folder: 'Boya Notra',
   language: 'es',
   model: 'onnx-community/whisper-base',
-  llm: 'medium',              // local AI: 'off' | 'small' (0.5B) | 'medium' (1.5B, GPU only)
+  llm: 'on', // local AI: 'on' (WebGPU) | 'off' | 'cpu' (desktop only)
   autoProcess: true,
   profile: DEFAULT_PROFILE,
 };
@@ -36,7 +36,9 @@ const KEY = 'notrafree.settings';
 function load() {
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) || '{}');
-    return { ...DEFAULTS, ...saved, profile: { ...DEFAULT_PROFILE, ...(saved.profile || {}) } };
+    const merged = { ...DEFAULTS, ...saved, profile: { ...DEFAULT_PROFILE, ...(saved.profile || {}) } };
+    if (!['on', 'off', 'cpu'].includes(merged.llm)) merged.llm = 'on'; // values from the first AI version
+    return merged;
   } catch {
     return structuredClone(DEFAULTS);
   }

@@ -203,7 +203,7 @@ const AUTO_TITLE = /^(Nota |Notra #|iphone-|Grabación|New Recording|REC|\d)/i;
 async function doSummarize(id) {
   const rec = getRec(id);
   if (!rec.transcript) return;
-  if (llm.enabled()) {
+  if (await llm.enabled()) {
     releaseWhisper();
     try {
       const { title, summary } = await llm.summarizeTranscript(rec.transcript, status);
@@ -456,10 +456,11 @@ function wireBle() {
 const aiHistory = [];  // [{role, content}] shown in the chat and fed back as context
 
 async function renderAI() {
-  const on = llm.enabled();
-  $('#ai-off').hidden = on;
-  $('#ai-panel').hidden = !on;
-  if (on) $('#ai-model').textContent = (await llm.config()).label;
+  const cfg = await llm.config();
+  $('#ai-off').hidden = !cfg.unavailable;
+  $('#ai-off-reason').textContent = cfg.unavailable || '';
+  $('#ai-panel').hidden = !!cfg.unavailable;
+  if (!cfg.unavailable) $('#ai-model').textContent = cfg.label;
 }
 
 function addBubble(role, text) {
@@ -490,7 +491,7 @@ function wireAI() {
       try {
         const { text, notes } = await llm.askNotes(q, state.recordings, aiHistory, {
           onStatus: status,
-          onToken: (t) => { streamed += t; bubble.textContent = streamed; bubble.scrollIntoView({ block: 'end' }); },
+          onToken: (t) => { streamed += t; bubble.textContent = llm.clean(streamed) || '…'; bubble.scrollIntoView({ block: 'end' }); },
         });
         bubble.textContent = text;
         if (notes.length) {
